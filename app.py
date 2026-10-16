@@ -319,22 +319,32 @@ tab_pedidos, tab_clientes, tab_costos, tab_caja = st.tabs([
 with tab_pedidos:
     st.subheader("Nuevo Pedido")
 
+    if "reset_pedido_cnt" not in st.session_state:
+        st.session_state["reset_pedido_cnt"] = 0
+    if "msg_pedido_ok" in st.session_state:
+        st.success(st.session_state.pop("msg_pedido_ok"))
+
+    r_ped = st.session_state["reset_pedido_cnt"]
+
     mapa_clientes = {
         f"📒 {c['nombre']} ({c.get('direccion') or 'Sin dirección'})": c
         for c in clientes
     }
-    opciones_clientes = list(mapa_clientes.keys()) + ["⚡ Carga Rápida (cliente de paso / sin agendar)"]
+    opciones_clientes = ["⚡ Carga Rápida (cliente de paso / sin agendar)"] + list(mapa_clientes.keys())
 
     col_top1, col_top2 = st.columns([2, 1])
     with col_top1:
         seleccion_cli = st.selectbox(
             "Cliente:",
-            options=opciones_clientes
+            options=opciones_clientes,
+            index=None,
+            placeholder="🔍 Buscá un cliente o elegí Carga Rápida...",
+            key=f"sel_cli_{r_ped}"
         )
     with col_top2:
-        fecha_pedido = st.date_input("Fecha del pedido", value=date.today())
+        fecha_pedido = st.date_input("Fecha del pedido", value=date.today(), key=f"fecha_ped_{r_ped}")
 
-    cliente_elegido = mapa_clientes.get(seleccion_cli)
+    cliente_elegido = mapa_clientes.get(seleccion_cli) if seleccion_cli else None
 
     if cliente_elegido:
         nombre_final = cliente_elegido["nombre"]
@@ -344,12 +354,17 @@ with tab_pedidos:
             f"📍 **Dirección:** {direccion_final or 'Sin dirección'} · "
             f"📞 **Tel:** {telefono_final or 'Sin teléfono'}"
         )
-    else:
+    elif seleccion_cli == "⚡ Carga Rápida (cliente de paso / sin agendar)":
         nombre_rapido = st.text_input(
             "Nombre o referencia rápida para este pedido *",
-            placeholder="Ej: Lucas (retira), Vecino 3°B, Mostrador..."
+            placeholder="Ej: Lucas (retira), Vecino 3°B, Mostrador...",
+            key=f"nom_rap_{r_ped}"
         )
         nombre_final = nombre_rapido.strip()
+        telefono_final = ""
+        direccion_final = ""
+    else:
+        nombre_final = ""
         telefono_final = ""
         direccion_final = ""
 
@@ -363,7 +378,7 @@ with tab_pedidos:
                 min_value=0,
                 step=1,
                 value=0,
-                key=f"ped_cant_{var['slug']}"
+                key=f"ped_cant_{var['slug']}_{r_ped}"
             )
 
     total_calculado = sum(
@@ -378,7 +393,8 @@ with tab_pedidos:
             min_value=0.0,
             value=float(total_calculado),
             step=500.0,
-            help="Se calcula solo según las pizzas elegidas, pero podés ajustarlo si hay envío o descuento."
+            help="Se calcula solo según las pizzas elegidas, pero podés ajustarlo si hay envío o descuento.",
+            key=f"tot_plata_{r_ped}"
         )
     with col_p2:
         metodo_pago = st.selectbox(
@@ -388,7 +404,8 @@ with tab_pedidos:
                 "transferencia": "🏦 Transferencia",
                 "efectivo": "💵 Efectivo",
                 "pendiente": "⏳ Pendiente"
-            }.get(x, x.capitalize())
+            }.get(x, x.capitalize()),
+            key=f"met_pago_{r_ped}"
         )
     with col_p3:
         estado_entrega = st.selectbox(
@@ -398,13 +415,14 @@ with tab_pedidos:
                 "pendiente": "🕒 Pendiente",
                 "entregado": "✅ Entregado",
                 "cancelado": "❌ Cancelado / No había nadie"
-            }.get(x, x.capitalize())
+            }.get(x, x.capitalize()),
+            key=f"est_ent_{r_ped}"
         )
 
     if st.button("🔥 Cargar Pedido", type="primary", use_container_width=True):
         total_pizzas_ped = sum(cantidades_elegidas.values())
         if not nombre_final:
-            st.warning("⚠️ Elegí un cliente de la lista o escribí un nombre rápido.")
+            st.warning("⚠️ Primero buscá un cliente en el casillero 'Cliente' o elegí '⚡ Carga Rápida'.")
         elif total_pizzas_ped <= 0:
             st.warning("⚠️ Agregá al menos 1 pizza al pedido.")
         else:
@@ -427,7 +445,8 @@ with tab_pedidos:
                 "metodo_pago": metodo_pago
             }).execute()
 
-            st.success(f"✅ Pedido de **{nombre_final}** cargado correctamente (${total_plata:,.0f}).")
+            st.session_state["reset_pedido_cnt"] += 1
+            st.session_state["msg_pedido_ok"] = f"✅ Pedido de **{nombre_final}** cargado correctamente (${total_plata:,.0f})."
             st.rerun()
 
 
@@ -441,15 +460,22 @@ with tab_clientes:
         "Cuando te compren, solo los elegís de la lista en la pestaña **📝 Pedidos** y se completan todos sus datos solos."
     )
 
+    if "reset_cli_cnt" not in st.session_state:
+        st.session_state["reset_cli_cnt"] = 0
+    if "msg_cli_ok" in st.session_state:
+        st.success(st.session_state.pop("msg_cli_ok"))
+
+    r_cli = st.session_state["reset_cli_cnt"]
+
     with st.container(border=True):
         st.markdown("#### 📝 Guardar Nuevo Cliente")
         ac1, ac2, ac3 = st.columns(3)
         with ac1:
-            ag_nom = st.text_input("Nombre y Apellido *", placeholder="Ej: Juan Pérez", key="nuevo_cli_nom")
+            ag_nom = st.text_input("Nombre y Apellido *", placeholder="Ej: Juan Pérez", key=f"nuevo_cli_nom_{r_cli}")
         with ac2:
-            ag_tel = st.text_input("Teléfono / WhatsApp", placeholder="Ej: 11 2345-6789", key="nuevo_cli_tel")
+            ag_tel = st.text_input("Teléfono / WhatsApp", placeholder="Ej: 11 2345-6789", key=f"nuevo_cli_tel_{r_cli}")
         with ac3:
-            ag_dir = st.text_input("Dirección / Entrecalles", placeholder="Ej: Belgrano 1230", key="nuevo_cli_dir")
+            ag_dir = st.text_input("Dirección / Entrecalles", placeholder="Ej: Belgrano 1230", key=f"nuevo_cli_dir_{r_cli}")
 
         if st.button("💾 Guardar Cliente en la Agenda", type="primary", use_container_width=True):
             if not ag_nom.strip():
@@ -460,7 +486,8 @@ with tab_clientes:
                     "telefono": ag_tel.strip(),
                     "direccion": ag_dir.strip()
                 }).execute()
-                st.success(f"✅ Cliente **{ag_nom.strip()}** guardado en la agenda.")
+                st.session_state["reset_cli_cnt"] += 1
+                st.session_state["msg_cli_ok"] = f"✅ Cliente **{ag_nom.strip()}** guardado en la agenda."
                 st.rerun()
 
     st.divider()
