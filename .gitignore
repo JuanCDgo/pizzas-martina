@@ -1,0 +1,6 @@
+# Nunca subir las claves privadas a GitHub
+.streamlit/secrets.toml
+.streamlit/secrets.toml.txt
+__pycache__/
+*.pyc
+.DS_Store
