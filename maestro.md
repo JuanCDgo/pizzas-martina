@@ -33,6 +33,10 @@ App para la toma de pedidos, gestión de clientes (agenda) y cálculo de costos 
     - **Sanitización y AppSec:** Control estricto de longitudes máximas (`max_chars`) en inputs de texto, sanitización de Markdown (`safe_str`), generación de slugs únicos con fallback UUID, y advertencia ante descuentos manuales sospechosos (>50%).
     - **Blindaje Matemático:** Protección contra división por cero en promociones (`ZeroDivisionError`) y bultos de insumos, junto con emparejamiento determinístico de combos especiales (de mayor a menor valor para beneficiar al cliente).
     - **UX Mejorada:** En "⚡ Carga Rápida" se agregó la opción `[x] Guardar también en la agenda`, y se añadieron indicadores visuales de progreso (`st.spinner`) y notificaciones flotantes (`st.toast`).
+11. **Rediseño Visual "Dark Gastro UI" + Motor Híbrido (Cloud + Local):**
+    - **Estética Moderna:** Fuentes `Outfit` y `Plus Jakarta Sans`, fondo obsidiana con atmósfera cálida, Hero Banner con insignia de estado en vivo y pestañas estilo *Segmented Pill Bar*.
+    - **Tarjetas Interactivas y Ticket Digital:** Tarjetas de pizza que se iluminan al sumar unidades, Ticket Digital de resumen con cálculo de ahorros en vivo, Comandas de cocina con badges de estado/cobro por color, Monitor de Horno con barra de progreso y tarjetas KPI financieras.
+    - **Resiliencia Híbrida (`HybridSupabaseClient`):** Si Supabase está en pausa o no hay internet, la app conmuta automáticamente a persistencia local (`datos_locales.json`) sin interrumpir la operación.
 
 ## 🗄️ Índices SQL Recomendados para Supabase (Opcional para DBA)
 Para optimizar las consultas en PostgreSQL a medida que crezcan los pedidos y clientes:
